@@ -1,9 +1,9 @@
 from __future__ import print_function
 from collections import OrderedDict
 import sys
+import csv
 import json
 import requests
-import pprint
 from scrapy.selector import Selector
 
 def make_request(user_id):
@@ -40,19 +40,26 @@ def extract_from_row(html, xpath):
 def get_hero_data(html):
     selector = Selector(text=html)
     rows = selector.xpath("//td").extract()
-    return OrderedDict([
-        ('name', extract_from_row(rows[1], "//a/text()")),
-        ('matches_played', extract_from_row(rows[2], "//td/text()")),
-        ('win_rate', extract_from_row(rows[3], "//td/@data-value")),
-        ('kda', extract_from_row(rows[4], "//td/@data-value")),
-    ])
+    return {
+        'name': extract_from_row(rows[1], "//a/text()"),
+        'matches_played': extract_from_row(rows[2], "//td/text()"),
+        'win_rate': extract_from_row(rows[3], "//td/@data-value"),
+        'kda': extract_from_row(rows[4], "//td/@data-value"),
+    }
 
 
-def get_raw_heroes(user_id):
+def get_heroes(user_id):
     selector = Selector(text = make_request(user_id).text)
     return [ get_hero_data(raw_hero) for raw_hero in
             selector.xpath("//tr[@data-link-to]").extract() ]
 
 if __name__ == '__main__':
     for user_id in sys.stdin:
-        pprint.pprint(json.dumps(get_raw_heroes(user_id.strip())))
+        user_id = user_id.strip()
+        with open(user_id + ".csv", 'w') as csvfile:
+            heroes = get_heroes(user_id.strip())
+            fieldnames = ['name', 'matches_played', 'win_rate', 'kda']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for hero in heroes:
+                writer.writerow(hero)
