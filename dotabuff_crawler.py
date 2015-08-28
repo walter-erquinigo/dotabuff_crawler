@@ -1,6 +1,7 @@
 from __future__ import print_function
 from collections import OrderedDict
 import sys
+import time
 import csv
 import json
 import requests
@@ -54,9 +55,10 @@ def get_heroes(user_id):
             selector.xpath("//tr[@data-link-to]").extract() ]
 
 if __name__ == '__main__':
+    ts = str(int(time.time()))
     for user_id in sys.stdin:
         user_id = user_id.strip()
-        with open(user_id + ".csv", 'w') as csvfile:
+        with open(user_id + "-" + ts + ".csv", 'w') as csvfile:
             heroes = get_heroes(user_id.strip())
             fieldnames = ['name', 'matches_played', 'win_rate', 'kda']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
